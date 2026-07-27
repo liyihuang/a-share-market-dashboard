@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# SQLite is an ephemeral build cache. The public site only needs dashboard.json.
+**/*.sqlite3
+**/*-wal
+**/*-shm
+industry/data/dashboard-data.js
+market/data/dashboard-data.js
+dashboard/data/factor-data.json

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>A股市场观察</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">市</span>
+      <div>
+        <h1>A股市场观察</h1>
+        <p>市场结构与行业估值</p>
+      </div>
+    </div>
+    <div class="header-actions"><div class="date-block"><span>数据日期</span><strong id="as-of">--</strong></div></div>
+  </header>
+
+  <nav class="view-tabs" aria-label="看板视图">
+    <button type="button" data-view="market" aria-selected="true">
+      <span>市场结构</span><small>中证宽基</small>
+    </button>
+    <button type="button" data-view="industry" aria-selected="false">
+      <span>申万行业</span><small>一级行业</small>
+    </button>
+    <button type="button" data-view="factor" aria-selected="false">
+      <span>因子表现</span><small>中证官方风格</small>
+    </button>
+  </nav>
+
+  <main>
+    <div id="standard-dashboard">
+    <section class="overview-band" aria-labelledby="view-title">
+      <div>
+        <p class="section-kicker" id="view-source">--</p>
+        <h2 id="view-title">正在读取数据</h2>
+        <p class="view-description" id="view-description">--</p>
+      </div>
+      <div class="snapshot" id="snapshot" aria-label="市场快照"></div>
+    </section>
+
+    <section class="control-row" aria-label="看板控制">
+      <div class="segmented" id="rank-controls" aria-label="排名指标"></div>
+      <label class="search-box">
+        <span aria-hidden="true">⌕</span>
+        <input id="search-input" type="search" placeholder="搜索名称或代码" autocomplete="off">
+      </label>
+    </section>
+
+    <section class="workspace">
+      <aside class="ranking-panel" aria-label="指数排名">
+        <div class="panel-heading">
+          <span id="ranking-title">横向排名</span><small id="item-count">--</small>
+        </div>
+        <div class="ranking" id="ranking"></div>
+      </aside>
+
+      <article class="detail-panel" aria-labelledby="detail-name">
+        <header class="detail-heading">
+          <div>
+            <p class="detail-code" id="detail-code">--</p>
+            <h2 id="detail-name">选择指数</h2>
+            <p class="detail-subtitle" id="detail-subtitle">--</p>
+          </div>
+          <span class="coverage" id="coverage">--</span>
+        </header>
+
+        <div class="metric-strip" id="metric-strip"></div>
+
+        <div class="chart-toolbar">
+          <div class="segmented compact" id="chart-controls" aria-label="历史曲线指标"></div>
+          <span class="chart-value" id="chart-value">--</span>
+        </div>
+        <div class="chart-frame" id="chart-frame">
+          <svg id="history-chart" viewBox="0 0 820 330" role="img" aria-label="历史曲线"></svg>
+          <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+        </div>
+
+        <section class="allocation-section" id="allocation-section" aria-labelledby="allocation-title">
+          <div class="allocation-heading"><div><h3 id="allocation-title">行业权重</h3><p id="allocation-note">按当前成分股权重归集</p></div></div>
+          <div class="allocation-content"><div class="allocation-pie" id="allocation-pie" role="img" aria-label="行业权重饼状图"></div><div class="allocation-legend" id="allocation-legend"></div></div>
+        </section>
+
+        <details class="methodology" id="methodology">
+          <summary><span id="method-status">指数口径</span><strong>口径与历史说明</strong></summary>
+          <p id="method-summary">--</p>
+          <ol id="method-events"></ol>
+        </details>
+      </article>
+    </section>
+
+    <section class="data-section" aria-labelledby="comparison-title">
+      <div class="section-heading">
+        <div><h2 id="comparison-title">完整比较</h2><p>收益为价格收益，不含分红；估值分位使用全部可比历史。</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="comparison-head"></thead>
+          <tbody id="comparison-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="data-section" aria-labelledby="components-title">
+      <div class="section-heading">
+        <div><h2 id="components-title">前十大成分股</h2><p id="component-summary">--</p></div>
+      </div>
+      <div class="table-wrap">
+        <table class="component-table">
+          <thead><tr><th>排名</th><th>证券代码</th><th>证券名称</th><th>权重</th><th>口径日期</th></tr></thead>
+          <tbody id="component-body"></tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+    <section class="factor-dashboard" id="factor-dashboard" hidden aria-labelledby="factor-title">
+      <header class="factor-intro">
+        <div>
+          <p class="section-kicker" id="factor-source">--</p>
+          <h2 id="factor-title">因子表现</h2>
+          <p id="factor-description">使用中证官方价格指数观察市值结构、价值、质量、低波动、动量与红利风格。</p>
+        </div>
+        <div class="factor-asof"><span>数据日期</span><strong id="factor-asof">--</strong></div>
+      </header>
+
+      <section class="factor-cards" id="factor-cards" aria-label="因子横向比较"></section>
+
+      <section class="factor-detail" aria-labelledby="factor-detail-title">
+        <header class="detail-heading">
+          <div>
+            <p class="detail-code" id="factor-category">--</p>
+            <h2 id="factor-detail-title">选择因子</h2>
+            <p class="detail-subtitle" id="factor-detail-description">--</p>
+          </div>
+          <span class="coverage" id="factor-coverage">--</span>
+        </header>
+
+        <div class="segmented factor-comparisons" id="factor-comparisons" aria-label="相对表现比较"></div>
+        <div class="metric-strip" id="factor-metrics"></div>
+
+        <div class="chart-toolbar">
+          <div class="segmented compact" id="factor-chart-controls" aria-label="图表模式"></div>
+          <span class="chart-value" id="factor-chart-value">--</span>
+        </div>
+        <div class="factor-chart-frame">
+          <svg id="factor-chart" viewBox="0 0 980 360" role="img" aria-label="因子历史曲线"></svg>
+          <div class="chart-tooltip" id="factor-chart-tooltip" hidden></div>
+        </div>
+        <div class="factor-legend" id="factor-legend"></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="factor-series-title">
+        <div class="section-heading"><div><h2 id="factor-series-title">官方指数对照</h2><p>指数价格收益不含分红；相对表现是研究比较序列，不是新编制的可投资指数。</p></div></div>
+        <div class="table-wrap"><table><thead id="factor-table-head"></thead><tbody id="factor-table-body"></tbody></table></div>
+      </section>
+
+      <section class="factor-holdings" aria-labelledby="factor-holdings-title">
+        <div class="section-heading"><div><h2 id="factor-holdings-title">指数持仓结构</h2><p id="factor-holdings-note">选择一条官方指数，查看其最新成分权重及对应行业暴露。</p></div></div>
+        <div class="segmented factor-series-controls" id="factor-series-controls" aria-label="选择持仓结构指数"></div>
+        <div class="allocation-content factor-allocation-content"><div class="allocation-pie" id="factor-allocation-pie" role="img" aria-label="因子指数行业权重饼图"></div><div class="allocation-legend" id="factor-allocation-legend"></div></div>
+        <div class="table-wrap factor-components-table"><table class="component-table"><thead><tr><th>排名</th><th>证券代码</th><th>证券名称</th><th>权重</th><th>口径日期</th></tr></thead><tbody id="factor-component-body"></tbody></table></div>
+      </section>
+
+      <details class="factor-methodology">
+        <summary><span>口径</span><strong>如何阅读这张因子看板</strong></summary>
+        <p>所有原始曲线均为中证官方价格指数。市值结构使用沪深300、中证500、中证1000与中证2000；其余风格尽可能在同一股票池内与对应基准比较。相对表现上升，表示前者相对后者跑赢。</p>
+      </details>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <footer><span id="footer-source">--</span><span>本页面用于观察市场，不构成投资建议</span></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

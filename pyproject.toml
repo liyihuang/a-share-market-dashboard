@@ -1,0 +1,8 @@
+[project]
+name = "a-share-market-dashboard"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "akshare>=1.18.35",
+    "pandas>=2.2.0",
+]
