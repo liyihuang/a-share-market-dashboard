@@ -28,10 +28,16 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run python dashboard/scripts/update_data.py --full
+      - name: Prepare site directory
+        run: |
+          mkdir -p _site/data
+          cp -r dashboard/web/* _site/
+          cp -r dashboard/data/* _site/data/
+          sed -i 's|\.\./data/dashboard.json|data/dashboard.json|g' _site/app.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dashboard
+          path: _site
 
   deploy:
     needs: build
