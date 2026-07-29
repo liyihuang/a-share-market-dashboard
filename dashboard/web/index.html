@@ -29,6 +29,9 @@
     <button type="button" data-view="factor" aria-selected="false">
       <span>因子表现</span><small>中证官方风格</small>
     </button>
+    <button type="button" data-view="enhanced" aria-selected="false">
+      <span>指数增强</span><small>超额收益评价</small>
+    </button>
   </nav>
 
   <main>
@@ -168,6 +171,34 @@
       <details class="factor-methodology">
         <summary><span>口径</span><strong>如何阅读这张因子看板</strong></summary>
         <p>所有原始曲线均为中证官方价格指数。市值结构使用沪深300、中证500、中证1000与中证2000；其余风格尽可能在同一股票池内与对应基准比较。相对表现上升，表示前者相对后者跑赢。</p>
+      </details>
+    </section>
+
+    <section class="enhanced-dashboard" id="enhanced-dashboard" hidden aria-labelledby="enhanced-title">
+      <header class="factor-intro">
+        <div>
+          <p class="section-kicker" id="enhanced-source">--</p>
+          <h2 id="enhanced-title">指数增强评价</h2>
+          <p id="enhanced-description">先按五年晨星评级排序；五年相同时，再比较三年晨星评级。</p>
+        </div>
+        <div class="factor-asof"><span>指标日期</span><strong id="enhanced-asof">--</strong></div>
+      </header>
+
+      <div class="segmented enhanced-index-controls" id="enhanced-index-controls" aria-label="选择标的指数"></div>
+
+      <section class="data-section" aria-labelledby="enhanced-rank-title">
+        <div class="section-heading"><div><h2 id="enhanced-rank-title">晨星评级排序</h2><p id="enhanced-rank-note">--</p></div></div>
+        <div class="table-wrap"><table><thead id="enhanced-rank-head"></thead><tbody id="enhanced-rank-body"></tbody></table></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="enhanced-watch-title">
+        <div class="section-heading"><div><h2 id="enhanced-watch-title">观察池</h2><p>暂未获得五年晨星评级的基金不参与排序，仅供跟踪。</p></div></div>
+        <div class="table-wrap"><table><thead id="enhanced-watch-head"></thead><tbody id="enhanced-watch-body"></tbody></table></div>
+      </section>
+
+      <details class="factor-methodology">
+        <summary><span>口径</span><strong>如何阅读这张指数增强榜</strong></summary>
+        <p id="enhanced-methodology">--</p>
       </details>
     </section>
   </main>

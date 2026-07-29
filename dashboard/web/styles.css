@@ -207,3 +207,11 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 17px
   .methodology li span { grid-column: 1 / -1; }
   footer { flex-direction: column; }
 }
+
+/* 指数增强评价 */
+.enhanced-index-controls { margin: 4px 0 8px; }
+#enhanced-rank-body td.enhanced-name, #enhanced-watch-body td.enhanced-name { text-align: left; }
+#enhanced-dashboard table { min-width: 0; width: 100%; max-width: 860px; }
+.enhanced-name small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.enhanced-score { font-weight: 600; }
+#enhanced-rank-body tr:first-child { background: #f7f4ec; }

@@ -13,6 +13,7 @@ UPDATERS = {
     "industry": ROOT / "industry" / "scripts" / "update_data.py",
     "market": ROOT / "market" / "scripts" / "update_data.py",
     "factor": APP_ROOT / "scripts" / "update_factors.py",
+    "enhanced": ROOT / "enhanced" / "scripts" / "update_data.py",
 }
 
 
@@ -23,17 +24,18 @@ def run(command: list[str]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="统一更新 A 股市场与申万行业看板")
-    parser.add_argument("--scope", choices=["all", "market", "industry", "factor"], default="all")
+    parser.add_argument("--scope", choices=["all", "market", "industry", "factor", "enhanced"], default="all")
     parser.add_argument("--full", action="store_true", help="完整回填所选数据源")
     parser.add_argument("--skip-components", action="store_true", help="仅更新行情与估值")
     parser.add_argument("--dashboard-only", action="store_true", help="不联网，只重新生成前端数据")
     args = parser.parse_args()
 
-    scopes = ["market", "industry", "factor"] if args.scope == "all" else [args.scope]
+    scopes = ["market", "industry", "factor", "enhanced"] if args.scope == "all" else [args.scope]
     if not args.dashboard_only:
         for scope in scopes:
             command = [sys.executable, str(UPDATERS[scope])]
-            if args.full:
+            # 指增评价每次都是全量拉取，且不接受行情类参数。
+            if args.full and scope != "enhanced":
                 command.append("--full")
             if args.skip_components and scope in {"market", "industry"}:
                 command.append("--skip-components")

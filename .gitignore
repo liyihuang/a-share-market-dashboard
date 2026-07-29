@@ -9,4 +9,8 @@ __pycache__/
 **/*-shm
 industry/data/dashboard-data.js
 market/data/dashboard-data.js
+enhanced/data/dashboard-data.js
 dashboard/data/factor-data.json
+
+# GitHub Pages build output
+_site/

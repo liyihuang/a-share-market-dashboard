@@ -9,6 +9,7 @@ const state = {
   selectedComparison: 0,
   selectedFactorSeries: null,
   factorChartMode: "relative",
+  selectedEnhancedIndex: null,
 };
 
 const metricLabels = {
@@ -352,6 +353,7 @@ function selectItem(code) {
 function renderAll() {
   $("#standard-dashboard").hidden = false;
   $("#factor-dashboard").hidden = true;
+  $("#enhanced-dashboard").hidden = true;
   renderHeader();
   renderRankControls();
   renderRanking();
@@ -386,6 +388,7 @@ function renderFactorDashboard() {
   const data = factorData();
   $("#standard-dashboard").hidden = true;
   $("#factor-dashboard").hidden = false;
+  $("#enhanced-dashboard").hidden = true;
   $$("[data-view]").forEach((button) => button.setAttribute("aria-selected", String(button.dataset.view === "factor")));
   $("#as-of").textContent = data?.asOf || "--";
   $("#footer-source").textContent = `数据源：${data?.source || "--"}`;
@@ -614,17 +617,109 @@ function showToast(message, timeout = 4500) {
   showToast.timer = window.setTimeout(() => { toast.hidden = true; }, timeout);
 }
 
+function enhancedData() {
+  return state.dashboard.enhanced;
+}
+
+function currentEnhancedGroup() {
+  const data = enhancedData();
+  if (!data || !Array.isArray(data.groups) || !data.groups.length) return null;
+  return data.groups.find((group) => group.indexCode === state.selectedEnhancedIndex) || data.groups[0];
+}
+
+function irCell(value) {
+  if (!Number.isFinite(value)) return "<td>--</td>";
+  const tone = value > 0 ? "positive" : value < 0 ? "negative" : "";
+  return `<td class="${tone}">${value.toFixed(2)}</td>`;
+}
+
+function starCell(value) {
+  if (!Number.isFinite(value)) return "--";
+  const n = Math.round(value);
+  return "★".repeat(n) + "☆".repeat(Math.max(0, 5 - n));
+}
+
+function renderEnhancedRankTable(group) {
+  const head = "<tr><th>基金</th><th>晨星评级(5年)</th><th>晨星评级(3年)</th></tr>";
+  $("#enhanced-rank-head").innerHTML = head;
+  const rows = group.ranked.map((fund) => {
+    return `<tr>
+      <td class="enhanced-name">${fund.name}<small>${fund.code}${fund.benchmark ? ` · ${fund.benchmark}` : ""}</small></td>
+      <td class="enhanced-score" title="晨星五年评级">${starCell(fund.rating?.y5)}</td>
+      <td class="enhanced-score" title="晨星三年评级">${starCell(fund.rating?.y3)}</td>
+    </tr>`;
+  }).join("");
+  $("#enhanced-rank-body").innerHTML = rows || '<tr><td colspan="3">暂无具有五年晨星评级的基金</td></tr>';
+}
+
+function renderEnhancedWatchTable(group) {
+  $("#enhanced-watch-head").innerHTML = "<tr><th>基金</th><th>成立日期</th><th>未入榜原因</th></tr>";
+  const watch = [...group.watch].sort((a, b) => (b.inceptionDate || "").localeCompare(a.inceptionDate || ""));
+  const rows = watch.map((fund) => {
+    return `<tr>
+      <td class="enhanced-name">${fund.name}<small>${fund.code}</small></td>
+      <td>${fund.inceptionDate || "--"}</td>
+      <td style="color:var(--muted)">${fund.reason || "--"}</td>
+    </tr>`;
+  }).join("");
+  $("#enhanced-watch-body").innerHTML = rows || '<tr><td colspan="3">无</td></tr>';
+}
+
+function renderEnhancedIndexControls(data) {
+  const container = $("#enhanced-index-controls");
+  if (!data || data.groups.length <= 1) { container.innerHTML = ""; return; }
+  container.innerHTML = data.groups.map((group) =>
+    `<button type="button" data-enhanced-index="${group.indexCode}" aria-pressed="${group.indexCode === state.selectedEnhancedIndex}">${group.indexName}</button>`
+  ).join("");
+  $$("[data-enhanced-index]").forEach((button) => button.addEventListener("click", () => {
+    state.selectedEnhancedIndex = button.dataset.enhancedIndex;
+    renderEnhancedDashboard();
+  }));
+}
+
+function renderEnhancedDashboard() {
+  const data = enhancedData();
+  $("#standard-dashboard").hidden = true;
+  $("#factor-dashboard").hidden = true;
+  $("#enhanced-dashboard").hidden = false;
+  $$("[data-view]").forEach((button) => button.setAttribute("aria-selected", String(button.dataset.view === "enhanced")));
+  $("#as-of").textContent = data?.asOf || "--";
+  $("#footer-source").textContent = `数据源：${data?.source || "--"}`;
+  $("#enhanced-asof").textContent = data?.asOf || "--";
+  $("#enhanced-source").textContent = `数据源 · ${data?.source || "--"}`;
+  $("#enhanced-methodology").textContent = data?.scoreNote || "--";
+  if (!data || !Array.isArray(data.groups) || !data.groups.length) {
+    $("#enhanced-title").textContent = "指数增强数据尚未生成";
+    $("#enhanced-rank-body").innerHTML = "";
+    $("#enhanced-watch-body").innerHTML = "";
+    return;
+  }
+  if (!state.selectedEnhancedIndex) state.selectedEnhancedIndex = data.groups[0].indexCode;
+  const group = currentEnhancedGroup();
+  $("#enhanced-title").textContent = `${group.indexName} · 指数增强评价`;
+  $("#enhanced-rank-note").textContent = `${group.indexName}共 ${group.ranked.length} 只具有五年晨星评级 · ${data.benchmark || "五年评级优先"}`;
+  renderEnhancedIndexControls(data);
+  renderEnhancedRankTable(group);
+  renderEnhancedWatchTable(group);
+}
+
 async function loadData() {
   const response = await fetch(`../data/dashboard.json?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error("无法读取静态看板数据，请等待下一次自动构建");
   state.dashboard = await response.json();
-  if (state.viewId === "factor") renderFactorDashboard(); else renderAll();
+  if (state.viewId === "factor") renderFactorDashboard();
+  else if (state.viewId === "enhanced") renderEnhancedDashboard();
+  else renderAll();
 }
 
 $$("[data-view]").forEach((button) => button.addEventListener("click", () => {
   state.viewId = button.dataset.view;
   if (state.viewId === "factor") {
     renderFactorDashboard();
+    return;
+  }
+  if (state.viewId === "enhanced") {
+    renderEnhancedDashboard();
     return;
   }
   state.query = "";

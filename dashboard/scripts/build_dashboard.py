@@ -21,6 +21,10 @@ SOURCES = {
         ROOT / "industry" / "data" / "dashboard-data.js",
         "window.INDUSTRY_DASHBOARD_DATA = ",
     ),
+    "enhanced": (
+        ROOT / "enhanced" / "data" / "dashboard-data.js",
+        "window.ENHANCED_FUNDS_DATA = ",
+    ),
 }
 
 
@@ -176,6 +180,13 @@ def normalize_industry(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def load_enhanced() -> dict[str, Any] | None:
+    enhanced_path, enhanced_prefix = SOURCES["enhanced"]
+    if not enhanced_path.exists():
+        return None
+    return read_generated_json(enhanced_path, enhanced_prefix)
+
+
 def build() -> dict[str, Any]:
     market_path, market_prefix = SOURCES["market"]
     industry_path, industry_prefix = SOURCES["industry"]
@@ -187,6 +198,7 @@ def build() -> dict[str, Any]:
         "generatedAt": datetime.now().astimezone().isoformat(timespec="seconds"),
         "views": [market, industry],
         "factors": factors,
+        "enhanced": load_enhanced(),
     }
 
 
