@@ -204,7 +204,7 @@ def parse_trade_date(raw: dict[str, Any]) -> date | None:
         return None
 
 
-def fetch_period(start: str, end: str, attempts: int = 4) -> list[dict[str, Any]]:
+def fetch_period(start: str, end: str, attempts: int = 4, timeout: int = 20) -> list[dict[str, Any]]:
     params = {
         "page": 1,
         "page_size": 10000,
@@ -221,7 +221,7 @@ def fetch_period(start: str, end: str, attempts: int = 4) -> list[dict[str, Any]
                 f"{API_URL}?{urlencode(params)}",
                 headers={"User-Agent": "Mozilla/5.0"},
             )
-            with urlopen(request, timeout=120, context=context) as response:
+            with urlopen(request, timeout=timeout, context=context) as response:
                 payload = json.load(response)
             data = payload["data"]
             rows = data.get("results", [])
@@ -246,15 +246,23 @@ def fetch_history(start_date: date, end_date: date, workers: int) -> list[dict[s
     rows: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {executor.submit(fetch_period, start, end): (start, end) for start, end in periods}
-        for future in as_completed(futures):
-            start, end = futures[future]
-            batch = future.result()
-            print(f"fetched {start}..{end}: {len(batch)} rows", flush=True)
-            rows.extend(batch)
+        try:
+            for future in as_completed(futures):
+                start, end = futures[future]
+                batch = future.result()
+                print(f"fetched {start}..{end}: {len(batch)} rows", flush=True)
+                rows.extend(batch)
+        except Exception:
+            # If the provider is unreachable, every other in-flight/queued
+            # period will fail the same way after its own retries. Bail out
+            # immediately instead of burning the job's time budget serially
+            # re-discovering that fact for each remaining period.
+            executor.shutdown(cancel_futures=True)
+            raise
     return rows
 
 
-def fetch_components(code: str, attempts: int = 4) -> list[dict[str, Any]]:
+def fetch_components(code: str, attempts: int = 4, timeout: int = 20) -> list[dict[str, Any]]:
     params = {"swindexcode": code, "page": 1, "page_size": 10000}
     context = ssl._create_unverified_context()
     for attempt in range(attempts):
@@ -263,7 +271,7 @@ def fetch_components(code: str, attempts: int = 4) -> list[dict[str, Any]]:
                 f"{COMPONENT_API_URL}?{urlencode(params)}",
                 headers={"User-Agent": "Mozilla/5.0"},
             )
-            with urlopen(request, timeout=120, context=context) as response:
+            with urlopen(request, timeout=timeout, context=context) as response:
                 payload = json.load(response)
             return payload["data"]["results"]
         except Exception:
@@ -439,7 +447,7 @@ def classification_version_for(connection: sqlite3.Connection, observed_from: st
     return row[0] if row else None
 
 
-def rebuild_index_identities(connection: sqlite3.Connection, latest_date: str) -> None:
+def rebuild_index_identities(connection: sqlite3.Connection) -> None:
     connection.execute("DELETE FROM index_names")
     connection.execute("DELETE FROM index_identities")
     codes = [row[0] for row in connection.execute("SELECT code FROM index_series ORDER BY code")]
@@ -464,9 +472,14 @@ def rebuild_index_identities(connection: sqlite3.Connection, latest_date: str) -
             period_end = trade_date
         periods.append((period_name, period_start, period_end))
 
-        for name, observed_from, observed_to in periods:
+        for period_index, (name, observed_from, observed_to) in enumerate(periods):
             identity_id = f"{code}@{observed_from}"
-            active = int(observed_to == latest_date)
+            # The last period is this code's current identity, regardless of
+            # whether *other* codes also reported on its most recent date.
+            # A provider glitch that drops a handful of codes for one day
+            # must not make those codes look like they have no active
+            # identity (see refresh_series_metadata's partial-day handling).
+            active = int(period_index == len(periods) - 1)
             version_id = classification_version_for(connection, observed_from)
             connection.execute(
                 "INSERT INTO index_names(code, name, valid_from, valid_to) VALUES (?, ?, ?, ?)",
@@ -597,7 +610,7 @@ def refresh_series_metadata(connection: sqlite3.Connection) -> None:
             last_seen_date = (SELECT max(trade_date) FROM daily_metrics d WHERE d.code = index_series.code)
         """
     )
-    rebuild_index_identities(connection, latest_date)
+    rebuild_index_identities(connection)
     rebuild_classification_events(connection)
 
 
