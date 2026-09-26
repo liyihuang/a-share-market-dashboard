@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import calendar
 from datetime import date, datetime, timedelta
+from io import BytesIO
 import json
 from pathlib import Path
 import sqlite3
@@ -11,6 +12,7 @@ from typing import Any
 
 import akshare as ak
 import pandas as pd
+import requests
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -213,9 +215,26 @@ def upsert_history(connection: sqlite3.Connection, rows: list[dict[str, Any]]) -
             )
 
 
-def fetch_components(code: str) -> list[dict[str, Any]]:
-    """Fetch the current official constituent weights for one CSI index."""
-    frame = ak.index_stock_cons_weight_csindex(symbol=code)
+def fetch_components(code: str, timeout: int = 20) -> list[dict[str, Any]]:
+    """Fetch the current official constituent weights for one CSI index.
+
+    Bypasses akshare's index_stock_cons_weight_csindex, which issues its
+    request with no timeout: a stalled response there blocks for minutes
+    until the peer resets the connection, which can burn the whole CI job
+    budget on a single slow index.
+    """
+    url = (
+        "https://oss-ch.csindex.com.cn/static/html/csindex/"
+        f"public/uploads/file/autofile/closeweight/{code}closeweight.xls"
+    )
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    frame = pd.read_excel(BytesIO(response.content))
+    frame.columns = [
+        "日期", "指数代码", "指数名称", "指数英文名称",
+        "成分券代码", "成分券名称", "成分券英文名称",
+        "交易所", "交易所英文名称", "权重",
+    ]
     if frame.empty:
         return []
     fetched_at = datetime.now().astimezone().isoformat(timespec="seconds")
